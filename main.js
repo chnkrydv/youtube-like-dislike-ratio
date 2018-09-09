@@ -45,20 +45,24 @@ function addStyle(){
 }
 
 function getSentimentCount(){
-  lc = 1;
-  dc = 1;
+  likesCount = 1;
+  dislikesCount = 1;
   var likes = Array.from(document.getElementsByTagName('yt-formatted-string'));
   likes.forEach( like => {
     var aria = like.getAttribute('aria-label');
-    var ariaArr = aria && aria.split(' ');
+    if(!aria) return;
+    
+    var ariaPhrase = aria && aria.split(' ');
+    var firstWord = ariaPhrase.length && +ariaPhrase[0].split(',').join('');
+    var count = isNaN(firstWord) ? 1 : firstWord;
 
-    if(ariaArr && ariaArr.includes('likes')) lc = +ariaArr[0].split(',').join('');
-    if(ariaArr && ariaArr.includes('dislikes')) dc = +ariaArr[0].split(',').join('');
+    if(ariaPhrase && ariaPhrase.includes('likes')) likesCount = count;
+    if(ariaPhrase && ariaPhrase.includes('dislikes')) dislikesCount = count;
   });
 
-  if(dc > lc) return '-' + Math.floor(dc/lc);
+  if(dislikesCount > likesCount) return '1/' + Math.floor(dislikesCount/likesCount);
 
-  return Math.floor(lc / dc);
+  return Math.floor(likesCount / dislikesCount);
 }
 
 function addUI() {
