@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "youtube like-dislike ratio",
+  "description": "it shows a whole number ratio of likes over dislikes of a youtube video",
+  "version": "1.0",
+  "icons": {
+    "64": "yt-like-dislike.png"
+  },
+  "content_scripts": [
+    {
+      "run_at": "document_idle",
+      "js": [
+        "main.js"
+      ],
+      "matches": [
+        "*://*.youtube.com/*"
+      ]
+    }
+  ]
+}
