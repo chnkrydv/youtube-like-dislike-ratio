@@ -1,4 +1,7 @@
-console.log('at least it loaded when youtube loaded')
+console.log('extension loaded');
+
+
+// START: preparing extension's UI with style
 function addMaterialLink() {
   var link = document.createElement('link');
   link.setAttribute('href', 'https://fonts.googleapis.com/icon?family=Material+Icons');
@@ -44,7 +47,12 @@ function addStyleToHead() {
 
   document.head.appendChild(style);
 }
+// END: preparing extension's UI with style
 
+
+
+
+// START: finding and getting sentiment nodes and calculating counts from them
 function getSentimentNodes(){
   var likes = null;
   var dislikes = null;
@@ -84,7 +92,12 @@ function getSentimentCount() {
 
   return Math.floor(likesCount / dislikesCount);
 }
+// END: finding and getting sentiment nodes and calculating counts from them
 
+
+
+
+// START: creating, updating and deleting extendion's UI
 function createUI() {
   var ratioCount = getSentimentCount();
   var container = document.createElement('span');
@@ -104,10 +117,6 @@ function createUI() {
   return container;
 }
 
-function deleteUI(ui) {
-  ui.parentNode.removeChild(ui);
-}
-
 function updateUI() {
   var ui = document.getElementById('yt-like-dislike-ratio');
   if (ui) deleteUI(ui);
@@ -119,6 +128,15 @@ function updateUI() {
   flex.appendChild(createUI());
 }
 
+function deleteUI(ui) {
+  ui.parentNode.removeChild(ui);
+}
+// END: creating, updating and deleting extendion's UI
+
+
+
+
+// START: observer logic and using it to find and observe sentiment nodes when YouTube page loads
 function observeNode(node, callback){
   var config = { attributes: true, childList: true, subtree: true };
   
@@ -127,27 +145,10 @@ function observeNode(node, callback){
   console.log(node.tagName + ' observer started');
 }
 
-function loadExtension() {
-  addMaterialLink();
-  addStyleToHead();
-  runUiUpdater();
-  console.log('called observer');
-}
-
-function runUiUpdater(){
-  console.log('ui updater invoked to run')
-  observeNode(document.body, observeSentimentsAfterFinding)
-}
-
-function observeSentimentsAfterFinding(documentBodyMutations, bodyObserver){
-  for (var mutation of documentBodyMutations) {
-    if (mutation.type == 'attributes') {
-      if(getSentimentNodes()) {
-        bodyObserver.disconnect(console.log('disconnect triggered'));
-  
-        startObservingSentiments();
-        break;
-      }
+function updateSentiments(sentimentMutationsList){
+  for (var mutation of sentimentMutationsList) {
+    if (mutation.type == 'attributes' && mutation.attributeName === "aria-label") {
+      updateUI();
     }
   }
 }
@@ -162,49 +163,40 @@ function startObservingSentiments(){
   }
 }
 
-function updateSentiments(sentimentMutationsList){
-  for (var mutation of sentimentMutationsList) {
-    if (mutation.type == 'attributes' && mutation.attributeName === "aria-label") {
-      updateUI();
+function observeSentimentsAfterFinding(documentBodyMutations, bodyObserver){
+  for (var mutation of documentBodyMutations) {
+    if (mutation.type == 'attributes') {
+      if(getSentimentNodes()) {
+        bodyObserver.disconnect(console.log('disconnect triggered'));
+  
+        startObservingSentiments();
+        break;
+      }
     }
   }
 }
+// END: observer logic and using it to find and observe sentiment nodes when YouTube page loads
 
+
+
+
+// START: finally UI updator, which is composed of above code is called
+function runUiUpdater(){
+  console.log('ui updater invoked to run')
+  observeNode(document.body, observeSentimentsAfterFinding)
+  console.log('called observer');
+}
+
+function loadExtension() {
+  addMaterialLink();
+  addStyleToHead();
+  runUiUpdater();
+}
+// END: finally UI updator, which is composed of above code is called
+
+
+
+
+// START: extension code executed as soon as content_script calls it
 setTimeout(loadExtension, 0);
-
-
-
-
-
-
-
-
-
-
-
-
-// function observeAndUpdateUI(node) {
-//   console.log('observer code reached');
-//   var targetNode = node || document.body;
-//   console.log(targetNode);
-//   var config = { attributes: true, childList: true, subtree: true };
-
-//   var callback = function (mutationsList, observer) {
-//     if(targetNode === document.body){
-//       console.log('still observing document body')
-//     }
-//     for (var mutation of mutationsList) {
-//       if (mutation.type == 'attributes') {
-//         if(getSentimentNodes()) {
-//           observer.disconnect();
-//           updateUI();
-//         }
-//         console.log(targetNode);
-//       }
-//     }
-//   };
-  
-//   var observer = new MutationObserver(callback);
-//   observer.observe(targetNode, config);
-//   console.log('observer started');
-// }
+// END: extension code executed as soon as content_script calls it
