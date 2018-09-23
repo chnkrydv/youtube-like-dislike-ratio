@@ -27,15 +27,12 @@ function addStyleToHead() {
   
   .like-dislike-ratio {
     color: #888;
-    display: grid;
-    grid-template-columns: 35px 25px;
-    align-items: center;
-    justify-items: center;
     font-size: 13px;
     font-weight: 500;
-    padding-bottom: 10px;
+    padding: 6px;
+    padding-bottom: 15px;
     margin-right: 20px;
-    margin-bottom: -22px;
+    margin-bottom: -18px;
     ${browserSpecificBarThickness()}
   }
   `;
@@ -75,7 +72,7 @@ function getCountFromPhrase(phrase){
   return isNaN(firstWord) ? 1 : firstWord;
 }
 
-function getSentimentCount() {
+function getSentimentRatio() {
   var sentiments = getSentimentNodes();
   if(!sentiments) return 0.0;
 
@@ -85,9 +82,9 @@ function getSentimentCount() {
   var likesCount = getCountFromPhrase(likesAria) || 1;
   var dislikesCount = getCountFromPhrase(dislikesAria) || 1;
 
-  if (dislikesCount > likesCount) return '1/' + Math.floor(dislikesCount / likesCount);
+  if (dislikesCount > likesCount) return '1 : ' + Math.floor(dislikesCount / likesCount);
 
-  return Math.floor(likesCount / dislikesCount);
+  return Math.floor(likesCount / dislikesCount) + ' : 1';
 }
 // END: finding and getting sentiment nodes and calculating counts from them
 
@@ -96,22 +93,16 @@ function getSentimentCount() {
 
 // START: creating, updating and deleting extendion's UI
 function createUI() {
-  var ratioCount = getSentimentCount();
-  var container = document.createElement('span');
-  var icon = document.createElement('i');
+  var ratioVal = getSentimentRatio();
+  console.log(ratioVal)
   var ratio = document.createElement('span');
 
-  container.setAttribute('id', 'yt-like-dislike-ratio')
-  container.classList.add('like-dislike-ratio');
-  icon.classList.add('material-icons', 'like-dislike-icon');
+  ratio.setAttribute('id', 'yt-like-dislike-ratio')
+  ratio.classList.add('like-dislike-ratio');
+  
+  ratio.innerText = ratioVal.toString();
 
-  icon.innerText = 'thumbs_up_down';
-  ratio.innerText = isNaN(ratioCount) ? '' : ratioCount.toString();
-
-  container.appendChild(icon);
-  container.appendChild(ratio);
-
-  return container;
+  return ratio;
 }
 
 function updateUI() {

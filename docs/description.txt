@@ -1,0 +1,5 @@
+Real likability of a YouTube video is defined mostly by how less number of people actually disliked it.
+
+YouTube also has a 'Sentiment Bar' to show the ratio. But most of the time it looks like a thin underline bar below Like-Dislike buttons. The reason being the fact that this ratio is almost always greater than 10. And a 100/1 ratio video doesn't stand out from a crowd of tonnes of average 10/1 videos, because the bar looks almost same for all of them.
+
+This extension shows a ratio of 'Number of likes' over 'Number of dislikes' of the video in a neat intuitive design.
