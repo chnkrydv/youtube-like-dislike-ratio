@@ -1,6 +1,3 @@
-console.log('extension loaded');
-
-
 // START: preparing extension's UI with style
 function addMaterialLink() {
   var link = document.createElement('link');
@@ -80,7 +77,7 @@ function getCountFromPhrase(phrase){
 
 function getSentimentCount() {
   var sentiments = getSentimentNodes();
-  if(!sentiments) return console.log('returning as no sentiment nodes detected as of') || 0.0;
+  if(!sentiments) return 0.0;
 
   var likesAria = sentiments.likes.getAttribute('aria-label');
   var dislikesAria = sentiments.dislikes.getAttribute('aria-label');
@@ -142,7 +139,6 @@ function observeNode(node, callback){
   
   var observer = new MutationObserver(callback);
   observer.observe(node, config);
-  console.log(node.tagName + ' observer started');
 }
 
 function updateSentiments(sentimentMutationsList){
@@ -154,7 +150,6 @@ function updateSentiments(sentimentMutationsList){
 }
 
 function startObservingSentiments(){
-  console.log('started observing sentiments');
   var sentimentNodes = getSentimentNodes();
   updateUI();
   if(sentimentNodes){
@@ -167,7 +162,7 @@ function observeSentimentsAfterFinding(documentBodyMutations, bodyObserver){
   for (var mutation of documentBodyMutations) {
     if (mutation.type == 'attributes') {
       if(getSentimentNodes()) {
-        bodyObserver.disconnect(console.log('disconnect triggered'));
+        bodyObserver.disconnect();
   
         startObservingSentiments();
         break;
@@ -182,9 +177,7 @@ function observeSentimentsAfterFinding(documentBodyMutations, bodyObserver){
 
 // START: finally UI updator, which is composed of above code is called
 function runUiUpdater(){
-  console.log('ui updater invoked to run')
   observeNode(document.body, observeSentimentsAfterFinding)
-  console.log('called observer');
 }
 
 function loadExtension() {
