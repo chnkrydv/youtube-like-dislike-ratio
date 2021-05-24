@@ -1,12 +1,14 @@
+// START: Constants
+
+var RENDERED_ELEMENT_ID = 'yt-like-dislike-ratio'
+var RENDERED_ELEMENT_PARENT_CLASS = 'yt-like-dislike-ratio'
+var RENDERED_ELEMENT_PARENT_QUERY_SELECTOR = '#info #flex'
+var SENTIMENTS_TOOLTIP_NODE_QUERY_SELECTOR = 'ytd-sentiment-bar-renderer #tooltip'
+
+// END: Constants
+
+
 // START: preparing extension's UI with style
-function addMaterialLink() {
-  var link = document.createElement('link');
-  link.setAttribute('href', 'https://fonts.googleapis.com/icon?family=Material+Icons');
-  link.setAttribute('rel', 'stylesheet');
-
-  document.head.appendChild(link);
-}
-
 function addStyleToHead() {
   var style = document.createElement('style');
   var browserSpecificBarThickness = function () {
@@ -16,16 +18,12 @@ function addStyleToHead() {
   }
 
   var styleText = `
-  .ratio-container {
+  .${RENDERED_ELEMENT_PARENT_CLASS} {
     display: grid;
     justify-items: end;
   }
-
-  .like-dislike-icon{
-    font-size: 22px
-  }
   
-  .like-dislike-ratio {
+  #${RENDERED_ELEMENT_ID} {
     color: #888;
     font-size: 13px;
     font-weight: 500;
@@ -65,97 +63,88 @@ function getSentimentNodes(){
   return likes && dislikes && { likes, dislikes };
 }
 
-function getCountFromPhrase(phrase){
-  var phraseArr = phrase.split(' ');
-  var firstWord = phraseArr.length && +phraseArr[0].split(',').join('');
-  
-  return isNaN(firstWord) ? 1 : firstWord;
+function getNumFromString(numString){
+  return +numString.replace(/[,.\s]/g, '')
 }
 
-function getSentimentRatio() {
-  var sentiments = getSentimentNodes();
-  if(!sentiments) return 0.0;
+function getRatioString(likes, dislikes){
+  var l2dRatio = (likes/dislikes).toFixed()
+  var d2lRatio = (likes/dislikes).toFixed()
+  if(!likes || !dislikes) return `${likes} : ${dislikes}`
+  else if(likes < dislikes) return `1 : ${d2lRatio}`
+  else return `${l2dRatio} : 1`
+}
 
-  var likesAria = sentiments.likes.getAttribute('aria-label');
-  var dislikesAria = sentiments.dislikes.getAttribute('aria-label');
+function getSentimentsTooltipNode(){
+  return document.querySelector(SENTIMENTS_TOOLTIP_NODE_QUERY_SELECTOR)
+}
 
-  var likesCount = getCountFromPhrase(likesAria) || 1;
-  var dislikesCount = getCountFromPhrase(dislikesAria) || 1;
+function getRatioFromSentimentsTooltip(setimentsTooltipNode) {
+  console.log(setimentsTooltipNode)
+  console.log(setimentsTooltipNode.innerText.trim())
 
-  if (dislikesCount > likesCount) return '1 : ' + Math.floor(dislikesCount / likesCount);
+  var sentimentsTextArr = setimentsTooltipNode.innerText.trim().split('/')
+  var likesStr = sentimentsTextArr[0]
+  var dislikesStr = sentimentsTextArr[1]
+  var likesCount = getNumFromString(likesStr);
+  var dislikesCount = getNumFromString(dislikesStr);
 
-  return Math.floor(likesCount / dislikesCount) + ' : 1';
+  var ratioString = getRatioString(likesCount, dislikesCount)
+  console.log(ratioString)
+
+  return ratioString
 }
 // END: finding and getting sentiment nodes and calculating counts from them
 
 
 
 
-// START: creating, updating and deleting extendion's UI
-function createUI() {
-  var ratioVal = getSentimentRatio();
-  console.log(ratioVal)
-  var ratio = document.createElement('span');
-
-  ratio.setAttribute('id', 'yt-like-dislike-ratio')
-  ratio.classList.add('like-dislike-ratio');
+// START: creating, updating and deleting extension's UI
+function createAndGetUINode(setimentsTooltipNode) {
+  var uiElementNode = document.createElement('span')
+  var ratioString = getRatioFromSentimentsTooltip(setimentsTooltipNode)
   
-  ratio.innerText = ratioVal.toString();
+  uiElementNode.setAttribute('id', RENDERED_ELEMENT_ID)
+  uiElementNode.innerText = ratioString
 
-  return ratio;
+  return uiElementNode;
 }
 
-function updateUI() {
-  var ui = document.getElementById('yt-like-dislike-ratio');
-  if (ui) deleteUI(ui);
-
-  var flex = document.getElementById('flex');
-  if(!flex) return;
-  flex.classList.add('ratio-container');
-
-  flex.appendChild(createUI());
+function flushStaleUI(){
+  var element = document.getElementById(RENDERED_ELEMENT_ID)
+  if (element) element.parentNode.removeChild(element)
 }
 
-function deleteUI(ui) {
-  ui.parentNode.removeChild(ui);
+function updateRenderedUI(setimentsTooltipNode) {
+  var updatedUINode = createAndGetUINode(setimentsTooltipNode)
+  var parentNode = document.querySelector(RENDERED_ELEMENT_PARENT_QUERY_SELECTOR)
+  if(!parentNode) return
+  
+  flushStaleUI()
+  parentNode.classList.add(RENDERED_ELEMENT_PARENT_CLASS)
+  parentNode.appendChild(updatedUINode);
 }
-// END: creating, updating and deleting extendion's UI
+// END: creating, updating and deleting extension's UI
 
 
 
 
 // START: observer logic and using it to find and observe sentiment nodes when YouTube page loads
-function observeNode(node, callback){
+function triggerCallbackOnNodeMutation(node, callback){
   var config = { attributes: true, childList: true, subtree: true };
   
   var observer = new MutationObserver(callback);
   observer.observe(node, config);
 }
 
-function updateSentiments(sentimentMutationsList){
-  for (var mutation of sentimentMutationsList) {
-    if (mutation.type == 'attributes' && mutation.attributeName === "aria-label") {
-      updateUI();
-    }
-  }
-}
-
-function startObservingSentiments(){
-  var sentimentNodes = getSentimentNodes();
-  updateUI();
-  if(sentimentNodes){
-    observeNode(sentimentNodes.likes, updateSentiments);
-    observeNode(sentimentNodes.dislikes, updateSentiments);
-  }
-}
-
-function observeSentimentsAfterFinding(documentBodyMutations, bodyObserver){
+function findAndObserveSentimentsNode(documentBodyMutations, documentBodyObserver){
   for (var mutation of documentBodyMutations) {
     if (mutation.type == 'attributes') {
-      if(getSentimentNodes()) {
-        bodyObserver.disconnect();
+      var setimentsTooltipNode = getSentimentsTooltipNode()
+      if(setimentsTooltipNode) {
+        documentBodyObserver.disconnect();
   
-        startObservingSentiments();
+        updateRenderedUI(setimentsTooltipNode);
         break;
       }
     }
@@ -168,11 +157,10 @@ function observeSentimentsAfterFinding(documentBodyMutations, bodyObserver){
 
 // START: finally UI updator, which is composed of above code is called
 function runUiUpdater(){
-  observeNode(document.body, observeSentimentsAfterFinding)
+  triggerCallbackOnNodeMutation(document.body, findAndObserveSentimentsNode)
 }
 
 function loadExtension() {
-  addMaterialLink();
   addStyleToHead();
   runUiUpdater();
 }
